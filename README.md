@@ -25,7 +25,7 @@ These hooks run an automated Claude code review on every `git commit`, catching 
 
 2. **`pre-commit.ps1`** — For each staged file with a recognised code extension:
    - Extracts the staged diff (`git diff --cached`).
-   - Sends the diff to the **Claude CLI** using the `@CSharpCodeReviewer` prompt, asking it to review only added lines (`+`).
+   - Sends the diff to the **Claude CLI** using the prompt, asking it to review only added lines (`+`).
    - If Claude responds with anything other than `LGTM`, the feedback is collected.
 
 3. **Interactive prompt** — If any issues are found across all staged files, a Windows Forms message box appears showing all suggestions and asks:
