@@ -1,24 +1,40 @@
-  # .githooks/pre-commit.ps1
+$codeExtensions = @(".js", ".ts", ".py", ".go", ".java", ".cs", ".cpp", ".c", ".rb", ".rs")
 
-  $codeExtensions = @(".js", ".ts", ".py", ".go", ".java", ".cs", ".cpp", ".c", ".rb", ".rs")
+$staged = git diff --cached --name-only --diff-filter=ACM
+$allSuggestions = ""
 
-  $staged = git diff --cached --name-only --diff-filter=ACM
+foreach ($file in $staged) {
+    $ext = [System.IO.Path]::GetExtension($file)
 
-  foreach ($file in $staged) {
-      $ext = [System.IO.Path]::GetExtension($file)
+    if ($ext -notin $codeExtensions) { continue }
+    if (-not (Test-Path $file))      { continue }
 
-      if ($ext -notin $codeExtensions) { continue }
-      if (-not (Test-Path $file))      { continue }
+    # Get only the staged diff for this file
+    $diff = git diff --cached $file
 
-      Write-Host ""
-      Write-Host "=== Claude reviewing: $file ===" -ForegroundColor Cyan
+    if (-not $diff) { continue }
 
-      Get-Content $file -Raw | claude -p "Review this code and suggest improvements for bugs or style issues. Be concise. List
-  suggestions as bullet points." --output-format text
+    $suggestions = $diff | claude -p "Review ONLY the added lines (starting with '+') in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. If nothing is wrong, respond with: LGTM" --output-format text
 
-      Write-Host "=================================" -ForegroundColor Cyan
-  }
+    # Skip if Claude says LGTM
+    if ($suggestions -match "LGTM") { continue }
 
-  Write-Host ""
-  Write-Host "Claude review complete. Proceeding with commit..." -ForegroundColor Green
-  exit 0
+    $allSuggestions += "=== $file ===`n$suggestions`n`n"
+}
+
+if ($allSuggestions -ne "") {
+    Add-Type -AssemblyName System.Windows.Forms
+
+    $result = [System.Windows.Forms.MessageBox]::Show(
+        "$allSuggestions`nCommit anyway?",
+        "Claude Code Review - Issues Found",
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Warning
+    )
+
+    if ($result -eq [System.Windows.Forms.DialogResult]::No) {
+        exit 1
+    }
+}
+
+exit 0
