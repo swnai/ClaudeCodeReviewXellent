@@ -1,11 +1,8 @@
 param(
-    [string]$RootFolder
+	[string]$filename
 )
 
-if (-not $RootFolder) {
-    Write-Error "Usage: .\Get-StagedFiles.ps1 -RootFolder <path>"
-    exit 1
-}
+$RootFolder = "J:\git\AX7"
 
 $gitDir = Join-Path $RootFolder ".git"
 
@@ -21,6 +18,6 @@ if (-not $stagedFiles) {
     exit 0
 }
 
-foreach ($file in $stagedFiles) {
-    Write-Host (Join-Path $RootFolder $file)
+if ($filename -in $stagedFiles) {
+    Write-Host (Join-Path $RootFolder $filename)
 }
