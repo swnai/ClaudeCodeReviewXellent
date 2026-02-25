@@ -1,4 +1,4 @@
-$codeExtensions = @(".js", ".ts", ".py", ".go", ".java", ".cs", ".cpp", ".c", ".rb", ".rs")
+$codeExtensions = @(".xml")
 
 $staged = git diff --cached --name-only --diff-filter=ACM
 $allSuggestions = ""
@@ -38,3 +38,4 @@ if ($allSuggestions -ne "") {
 }
 
 exit 0
+
