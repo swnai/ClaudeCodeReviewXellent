@@ -1,5 +1,5 @@
 #!/bin/sh
 # .git/hooks/pre-commit
 # Calls PowerShell — works natively on Windows/Visual Studio
-powershell.exe -ExecutionPolicy Bypass -NoProfile -File ".git/hooks/pre-commit.ps1"
-exit $?
+Start-Process powershell.exe -Verb RunAs -ArgumentList '-ExecutionPolicy Bypass -NoProfile -File ".git/hooks/pre-commit.ps1"'
+  exit $?
