@@ -1,10 +1,17 @@
-$codeExtensions = @(".xml")
+$codeExtensions = @(".xml", ".cs", ".xpp")
 $staged = git diff --cached --name-only --diff-filter=ACM
 $allSuggestions = ""
 
 foreach ($file in $staged) {
     $ext = [System.IO.Path]::GetExtension($file)
 	$fullPath = & "$PSScriptRoot\Get-StagedFiles.ps1" -filename $file
+	
+	$details = & "$PSScriptRoot\GetD365ObjectInfo.ps1" $fullPath
+	
+	$module = $details.ModuleName
+	$model = $details.ModelName
+	$Object = $details.ObjectType
+	
     if ($ext -notin $codeExtensions) { continue }
     if (-not (Test-Path $file))      { continue }
 
@@ -31,6 +38,4 @@ if ($allSuggestions -ne "") {
         exit 1
     }
 }
-
 exit 0
-
