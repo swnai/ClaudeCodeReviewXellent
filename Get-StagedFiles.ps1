@@ -11,7 +11,8 @@ if (-not (Test-Path $gitDir)) {
     exit 1
 }
 
-$stagedFiles = git -C $RootFolder diff --name-only --cached
+$stagedFullPath = git -C $RootFolder diff --name-only --cached
+$stagedFiles = Split-Path -Leaf $stagedFullPath
 
 if (-not $stagedFiles) {
     Write-Host "No staged files."
@@ -19,5 +20,5 @@ if (-not $stagedFiles) {
 }
 
 if ($filename -in $stagedFiles) {
-    Write-Host (Join-Path $RootFolder $filename)
+    Write-Host (Join-Path $RootFolder $stagedFullPath)
 }
