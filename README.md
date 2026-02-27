@@ -70,6 +70,7 @@ If any feedback was collected, a Windows Forms dialog appears:
 
 Download `Install_Code_Reviewer.ps1` from this repo, then run:
 ```powershell
+$base = "https://raw.githubusercontent.com/swnai/ClaudeCodeReviewXellent/main"
 Invoke-WebRequest "$base/Install_Code_Reviewer.ps1"  -OutFile "<Path>/Install_Code_Reviewer.ps1"
 ```
 
