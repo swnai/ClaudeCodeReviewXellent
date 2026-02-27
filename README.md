@@ -69,6 +69,9 @@ If any feedback was collected, a Windows Forms dialog appears:
 ## Installation
 
 Download `Install_Code_Reviewer.ps1` from this repo, then run:
+```powershell
+Invoke-WebRequest "$base/Install_Code_Reviewer.ps1"  -OutFile "<Path>/Install_Code_Reviewer.ps1"
+```
 
 ```powershell
 .\Install_Code_Reviewer.ps1 -project "<path\to\your\project>"
