@@ -18,7 +18,8 @@ foreach ($file in $staged) {
     $diff = git diff --cached $file
     if (-not $diff) { continue }
 
-	$bestpractice = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):XAI_RequestCache -model=$model -module=$module"
+	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):XAI_RequestCache -model=$model -module=$module"
+	$bestPractice = Invoke-Expression $bpCommand
 	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added code and '-' for removed code) in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. Analyze $bestpractice for the changes and give a nicely curated document" --output-format text
    
     $allSuggestions += "=== $file ===`n$suggestions`n`n"
@@ -39,4 +40,5 @@ if ($allSuggestions -ne "") {
     }
 }
 exit 0
+
 
