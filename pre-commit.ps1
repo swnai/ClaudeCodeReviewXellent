@@ -3,10 +3,8 @@ $staged = git diff --cached --name-only --diff-filter=ACM
 $allSuggestions = ""
 
 foreach ($file in $staged) {
-    $ext = [System.IO.Path]::GetExtension($file)
-	$fullPath = & "$PSScriptRoot\Get-StagedFiles.ps1" -filename $file
-	
-	$details = & "$PSScriptRoot\GetD365ObjectInfo.ps1" $fullPath
+    $ext = [System.IO.Path]::GetExtension($file)	
+	$details = & "$PSScriptRoot\GetD365ObjectInfo.ps1" $file
 	$filename = Split-Path -Leaf $file
 	$module = $details.ModuleName
 	$model = $details.ModelName
@@ -18,7 +16,7 @@ foreach ($file in $staged) {
     $diff = git diff --cached $file
     if (-not $diff) { continue }
 
-	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):XAI_RequestCache -model=$model -module=$module"
+	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):$filename -model=$model -module=$module"
 	$bestPractice = Invoke-Expression $bpCommand
 	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added code and '-' for removed code) in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. Analyze $bestpractice for the changes and give a nicely curated document" --output-format text
    
@@ -40,5 +38,6 @@ if ($allSuggestions -ne "") {
     }
 }
 exit 0
+
 
 
