@@ -25,19 +25,47 @@ foreach ($file in $staged) {
 
 if ($allSuggestions -ne "") {
     Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Claude Code Review - Issues Found"
+    $form.WindowState = [System.Windows.Forms.FormWindowState]::Maximized
+    $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
 
-    $result = [System.Windows.Forms.MessageBox]::Show(
-        "$allSuggestions`nCommit anyway?",
-        "Claude Code Review - Issues Found",
-        [System.Windows.Forms.MessageBoxButtons]::YesNo,
-        [System.Windows.Forms.MessageBoxIcon]::Warning
-    )
+    $textBox = New-Object System.Windows.Forms.RichTextBox
+    $textBox.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $textBox.Text = "$allSuggestions`nCommit anyway?"
+    $textBox.ReadOnly = $true
+    $textBox.Font = New-Object System.Drawing.Font("Consolas", 10)
+    $textBox.ScrollBars = [System.Windows.Forms.RichTextBoxScrollBars]::Vertical
+
+    $panel = New-Object System.Windows.Forms.Panel
+    $panel.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $panel.Height = 50
+
+    $btnYes = New-Object System.Windows.Forms.Button
+    $btnYes.Text = "Yes, Commit"
+    $btnYes.Width = 120
+    $btnYes.Location = New-Object System.Drawing.Point(10, 10)
+    $btnYes.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+
+    $btnNo = New-Object System.Windows.Forms.Button
+    $btnNo.Text = "No, Cancel"
+    $btnNo.Width = 120
+    $btnNo.Location = New-Object System.Drawing.Point(140, 10)
+    $btnNo.DialogResult = [System.Windows.Forms.DialogResult]::No
+
+    $panel.Controls.AddRange(@($btnYes, $btnNo))
+    $form.Controls.AddRange(@($textBox, $panel))
+    $form.AcceptButton = $btnYes
+    $form.CancelButton = $btnNo
+
+    $result = $form.ShowDialog()
 
     if ($result -eq [System.Windows.Forms.DialogResult]::No) {
         exit 1
     }
-}
-exit 0
-
-
-
+	if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
+		exit 0
+	}
+  }
+exit 1
