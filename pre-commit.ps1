@@ -1,3 +1,6 @@
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding              = [System.Text.Encoding]::UTF8
+
 $codeExtensions = @(".xml", ".cs", ".xpp")
 $staged = git diff --cached --name-only --diff-filter=ACM
 $allSuggestions = ""
@@ -6,6 +9,7 @@ foreach ($file in $staged) {
     $ext = [System.IO.Path]::GetExtension($file)	
 	$details = & "$PSScriptRoot\GetD365ObjectInfo.ps1" $file
 	$filename = Split-Path -Leaf $file
+	$objectName  = [System.IO.Path]::GetFileNameWithoutExtension($file)
 	$module = $details.ModuleName
 	$model = $details.ModelName
 	$Object = $details.ObjectType
@@ -13,14 +17,25 @@ foreach ($file in $staged) {
     if ($ext -notin $codeExtensions) { continue }
     if (-not (Test-Path $file))      { continue }
 
-    $diff = git diff --cached $file
+    $diff = (git diff --cached $file) -join "`n"
     if (-not $diff) { continue }
 
-	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):$filename -model=$model -module=$module"
-	$bestPractice = Invoke-Expression $bpCommand
-	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added code and '-' for removed code) in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. Analyze $bestpractice for the changes and give a nicely curated document" --output-format text
+	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):$objectName -model=$model -module=$module"
+	$bestPractice = (Invoke-Expression $bpCommand) -join "`n"
+	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added or '-' for removed) in this git diff. Also refer to these best practice findings: $bestPractice
+
+For each issue found, output EXACTLY in this format with no exceptions:
+
+## <short title of the issue>
+<one or two sentences explaining the problem and how to fix it. Use **bold** for key terms and backticks for code references.>
+
+---
+
+Every single suggestion MUST start with ## followed by a title. Never omit the ## heading.
+Separate every suggestion with --- on its own line.
+Do not use bullet points, numbered lists, or any intro/closing text. Only output suggestions." --output-format text
    
-    $allSuggestions += "=== $file ===`n$suggestions`n`n"
+    $allSuggestions += "=== $file ===`n$($suggestions -join "`n")`n`n"
 }
 
 function Format-InlineMd($text) {
@@ -31,6 +46,9 @@ function Format-InlineMd($text) {
     $text = $text -replace '\*(.+?)\*',      '<em>$1</em>'
     $text = $text -replace '_(.+?)_',        '<em>$1</em>'
     $text = $text -replace '`(.+?)`',        '<code>$1</code>'
+    $text = $text -replace '  \n',           '<br/>'
+	$text = $text -replace '\n\n',           '</p><p>'
+	$text = $text -replace '\n',             '<br/>'
     return $text
 }
 
@@ -136,19 +154,20 @@ if ($allSuggestions -ne "") {
   <meta charset="utf-8"/>
   <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
   <style>
-    body        { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; margin: 24px; color: #1a1a1a; line-height: 1.6; }
-    h1.file-hdr { font-size: 1.1em; background: #0078d4; color: #fff; padding: 6px 12px; border-radius: 4px; margin: 24px 0 8px; }
-    h1          { font-size: 1.5em; border-bottom: 2px solid #0078d4; padding-bottom: 4px; margin-top: 20px; }
-    h2          { font-size: 1.25em; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-top: 16px; }
-    h3          { font-size: 1.05em; margin-top: 12px; }
-    p           { margin: 6px 0; }
-    ul, ol      { padding-left: 24px; margin: 6px 0; }
-    li          { margin: 3px 0; }
-    pre         { background: #f5f5f5; border: 1px solid #ddd; padding: 10px 14px; border-radius: 4px; overflow-x: auto; font-family: Consolas, monospace; font-size: 12px; }
-    code        { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12px; }
-    pre code    { background: none; padding: 0; }
-    hr          { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
-    strong      { font-weight: 600; }
+    body        { font-family: Segoe UI, Arial, sans-serif; font-size: 13px; margin: 24px 32px; color: #1a1a1a; line-height: 1.7; background: #f9f9f9; }
+    h1.file-hdr { font-size: 1em; background: #0078d4; color: #fff; padding: 8px 14px; border-radius: 4px; margin: 28px 0 12px; letter-spacing: 0.4px; }
+    h1          { font-size: 1.4em; border-bottom: 2px solid #0078d4; padding-bottom: 4px; margin-top: 24px; color: #003d6b; }
+    h2          { font-size: 1em; font-weight: 700; color: #1a1a1a; margin: 18px 0 4px 0; padding: 10px 14px 6px 14px; background: #f0f4f8; border-left: 4px solid #0078d4; border-radius: 3px; display: block; }
+    h3          { font-size: 1em; margin-top: 12px; color: #555; }
+    p           { margin: 0 0 4px 0; color: #333; }
+    ul, ol      { padding-left: 22px; margin: 4px 0; }
+    li          { margin: 2px 0; }
+    pre         { background: #1e1e1e; color: #d4d4d4; border-radius: 5px; padding: 12px 16px; overflow-x: auto; font-family: Consolas, monospace; font-size: 12px; margin: 8px 0; }
+    code        { background: #ececec; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12px; color: #1a1a1a; }
+    pre code    { background: none; padding: 0; color: #d4d4d4; }
+    hr          { border: none; border-top: 1px solid #e8e8e8; margin: 16px 0; }
+    strong      { font-weight: 700; color: #1a1a1a; }
+    p           { margin: 0 0 6px 14px; color: #333; }
   </style>
 </head>
 <body>
