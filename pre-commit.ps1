@@ -7,7 +7,7 @@ foreach ($file in $staged) {
 	$fullPath = & "$PSScriptRoot\Get-StagedFiles.ps1" -filename $file
 	
 	$details = & "$PSScriptRoot\GetD365ObjectInfo.ps1" $fullPath
-	
+	$filename = Split-Path -Leaf $file
 	$module = $details.ModuleName
 	$model = $details.ModelName
 	$Object = $details.ObjectType
@@ -17,10 +17,10 @@ foreach ($file in $staged) {
 
     $diff = git diff --cached $file
     if (-not $diff) { continue }
-	
-    $suggestions = $diff | claude -p "Review ONLY the added lines (starting with '+') in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. If nothing is wrong, respond with: LGTM" --output-format text
-    
-	if ($suggestions -match "LGTM") { continue }
+
+	$bestpractice = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):XAI_RequestCache -model=$model -module=$module"
+	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added code and '-' for removed code) in this git diff. Suggest improvements for bugs or style issues or unecessary code in those lines only. Analyze $bestpractice for the changes and give a nicely curated document" --output-format text
+   
     $allSuggestions += "=== $file ===`n$suggestions`n`n"
 }
 
@@ -39,3 +39,4 @@ if ($allSuggestions -ne "") {
     }
 }
 exit 0
+
