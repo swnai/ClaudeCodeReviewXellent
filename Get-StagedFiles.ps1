@@ -12,7 +12,7 @@ if (-not (Test-Path $gitDir)) {
 
 $stagedFullPath = git -C $RootFolder diff --name-only --cached
 foreach ($path in $stagedFullPath) {
-	if ($filename -in (Split-Path -Leaf $path)) {
+	if ($filename -in $path) {
 		Write-Host (Join-Path $RootFolder $path)
 	}
 }
