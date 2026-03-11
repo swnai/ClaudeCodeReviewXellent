@@ -22,7 +22,7 @@ foreach ($file in $staged) {
 
 	$bpCommand = "J:\AosService\PackagesLocalDirectory\bin\xppbp.exe -metadata='J:\AosService\PackagesLocalDirectory' $($object):$objectName -model=$model -module=$module"
 	$bestPractice = (Invoke-Expression $bpCommand) -join "`n"
-	$suggestions = $diff | claude -p "Review ONLY the changed lines (starting with '+' for added or '-' for removed) in this git diff. Also refer to these best practice findings: $bestPractice
+	$staticPrompt = "Review ONLY the changed lines (starting with '+' for added or '-' for removed) in this git diff. Also refer to the best practice findings provided in the context.
 
 For each issue found, output EXACTLY in this format with no exceptions:
 
@@ -33,7 +33,10 @@ For each issue found, output EXACTLY in this format with no exceptions:
 
 Every single suggestion MUST start with ## followed by a title. Never omit the ## heading.
 Separate every suggestion with --- on its own line.
-Do not use bullet points, numbered lists, or any intro/closing text. Only output suggestions." --output-format text
+Do not use bullet points, numbered lists, or any intro/closing text. Only output suggestions."
+
+	$context = "=== BEST PRACTICE FINDINGS ===`n$bestPractice`n`n=== GIT DIFF ===`n$diff"
+	$suggestions = $context | claude -p $staticPrompt --output-format text
    
     $allSuggestions += "=== $file ===`n$($suggestions -join "`n")`n`n"
 }
